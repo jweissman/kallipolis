@@ -1,0 +1,60 @@
+Kal {
+    Program = ListOf<Statement, #br>
+    Statement = Declaration | Expr
+    Expr = Assignment | Value
+
+    Assignment = Judgment<Name> Equals Value -- judged
+               | Name Equals Value -- inferred
+    Declaration = "type" Name Equals Type
+    Judgment<Judged> = Judged Colon Type
+
+	  Value = CmpExp
+    
+    CmpExp = AddExp ">"  AddExp  -- gt
+           | AddExp "<"  AddExp  -- lt
+           | AddExp "==" AddExp  -- eq
+           | AddExp
+
+    AddExp
+      = AddExp "+" MulExp  -- plus
+      | AddExp "-" MulExp  -- minus
+      | MulExp
+
+    MulExp
+      = MulExp "*" ExpExp  -- times
+      | MulExp "/" ExpExp  -- divide
+      | ExpExp
+
+    ExpExp
+      = PriExp "^" ExpExp  -- power
+      | PriExp
+
+    PriExp
+      = "(" Value ")"  -- paren
+      | "+" PriExp   -- pos
+      | "-" PriExp   -- neg
+      | Name
+      | NumberLiteral
+    
+    NumberLiteral = number
+	  Name = ident
+
+    Type =
+             | Type Type+ -- algebraic
+             | Type "|" Type -- sum
+             | Type "&" Type -- union
+             | Type Arrow Type -- fn
+             | Type "[]" -- list
+             | "(" Type ")" -- parens
+             | "(" ListOf<Type, ","> ")" -- tuple
+             | "{" ListOf<KeyVal, ","> "}" -- record
+             | Name -- simple
+    KeyVal = Name ":" Type
+    Colon = ":"
+    Equals = "="
+    Arrow = "->"
+    
+    ident = letter alnum*
+    number = digit+
+    br = ";" | "\n" | "\r"
+}

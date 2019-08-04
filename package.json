@@ -1,0 +1,27 @@
+{
+  "name": "kal",
+  "version": "1.0.0",
+  "description": "kallipolis-lang",
+  "main": "index.ts",
+  "repository": "https://github.com/jweissman.github.io/kal",
+  "author": "Joseph Weissman",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest",
+    "test:debug": "node --inspect-brk node_modules/.bin/jest --runInBand"
+  },
+  "dependencies": {
+    "ohm-js": "^0.14.0"
+  },
+  "bin": {
+    "kal": "./bin/index.ts"
+  },
+  "devDependencies": {
+    "@types/jest": "^24.0.16",
+    "@types/node": "^11.13.5",
+    "jest": "^24.8.0",
+    "ts-jest": "^24.0.2",
+    "ts-node": "^8.3.0",
+    "typescript": "^3.5.3"
+  }
+}

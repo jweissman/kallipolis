@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "outDir": "./dist/",
+    "noImplicitAny": true,
+    "module": "commonjs",
+    "target": "es2017",
+    "allowJs": true,
+    "esModuleInterop": true,
+    "strict": true,
+  },
+  "exclude": [
+    "node_modules",
+    "src/*.ohm"
+  ]
+}
