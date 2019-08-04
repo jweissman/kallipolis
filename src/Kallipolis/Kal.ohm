@@ -33,9 +33,11 @@ Kal {
       = "(" Value ")"  -- paren
       | "+" PriExp   -- pos
       | "-" PriExp   -- neg
-      | Name
       | NumberLiteral
+      | StringLiteral
+      | Name
     
+    StringLiteral = string
     NumberLiteral = number
 	  Name = ident
 
@@ -53,7 +55,9 @@ Kal {
     Colon = ":"
     Equals = "="
     Arrow = "->"
+
     
+    string = "\"" #(~"\"" any)* "\""
     ident = letter alnum*
     number = digit+
     br = ";" | "\n" | "\r"

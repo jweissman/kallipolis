@@ -1,76 +1,64 @@
 import {
     VM,
-    VMType,
-    TypedVMValue,
-    VMValue,
     Multiply,
     VMResult,
     Add,
     Push,
     Write,
-    IntegerVMType,
-    VMInt,
     Read,
-    Divide
+    Divide,
+    Subtract,
 } from "./VM";
+import { VMValue, VMInt, VMType, TypedVMValue, IntegerVMType } from "./VMValue";
 
+class VMError extends VMValue {
+    constructor(private message: string) {
+        super();
+    }
+    pretty(): string {
+        return this.message;
+    }
+    toJS() {
+        throw new Error(this.message);
+    }
+    plus(right: VMInt) { return this; }
+    minus(right: VMInt) { return this; }
+    times(right: VMInt) { return this; }
+    divide(right: VMInt) { return this; }
+}
 // the Justice VM engine :D
-// a tiny vm with a handful of operations
 export default class Justice extends VM {
     types: { [key: string]: VMType } = {}
     db: { [key: string]: TypedVMValue } = {}
     stack: VMValue[] = []
     get top() { return this.stack[this.stack.length-1]; }
-    
+
     multiply(_m: Multiply): VMResult { 
-        let left = this.stack.pop();
-        let right = this.stack.pop();
-        let result;
-        if (left && left.times && right) {
-            result = left.times(right);
-            this.stack.push(result);
-            return {
-                message: `Multiplied ${left.pretty()} and ${right.pretty()} yielding ${result.pretty()}`,
-                value: result
-            }
-        } else {
-            throw new Error("Could not multiply " + { left, right})
-        }
+        return this.binaryOp('times', (left: VMValue, right: VMValue) => left.times
+            ? left.times(right)
+            : new VMError(`${left.pretty()} cannot be multiplied`)
+        )
     }
 
     divide(_d: Divide): VMResult { 
-        let left = this.stack.pop();
-        let right = this.stack.pop();
-        let result;
-        if (left && right && right.divide) {
-            result = right.divide(left);
-            this.stack.push(result);
-            return {
-                message: `Divided ${right.pretty()} by ${left.pretty()} yielding ${result.pretty()}`,
-                value: result
-            }
-        } else {
-            throw new Error("Could not divide " + { left, right})
-        }
+        return this.binaryOp('over', (left: VMValue, right: VMValue) => left.divide
+            ? left.divide(right)
+            : new VMError(`${left.pretty()} cannot be divided`)
+        )
     }
 
-
-
     add(_a: Add): VMResult { 
-        let left = this.stack.pop();
-        let right = this.stack.pop();
-        let result;
-        if (left && left.plus && right) {
-            result = left.plus(right);
-            this.stack.push(result);
-            return {
-                message: `Added ${left.pretty()} and ${right.pretty()} yielding ${result.pretty()}`,
-                value: result
-            }
-        } else {
-            throw new Error("Could not add " + { left, right})
-        }
-        
+        return this.binaryOp('plus', (left: VMValue, right: VMValue) => left.plus
+            ? left.plus(right)
+            : new VMError(`${left.pretty()} cannot be added`)
+        )
+    }
+
+    subtract(_s: Subtract): VMResult { 
+        return this.binaryOp('minus', (left: VMValue, right: VMValue) => left.minus
+            ? left.minus(right)
+            : new VMError(`${left.pretty()} cannot be added`)
+        )
     }
 
     push(p: Push): VMResult {
@@ -103,5 +91,21 @@ export default class Justice extends VM {
         let value = this.db[r.key].value
         this.stack.push(value);
         return { message: `Read ${value.pretty()} from ${r.key}`, value }
+    }
+
+    private binaryOp(name: string, method: (l: VMValue, r: VMValue) => VMValue): VMResult {
+        let left = this.stack.pop();
+        let right = this.stack.pop();
+        let result;
+        if (left && right) {
+            result = method(left, right);
+            this.stack.push(result);
+            return {
+                message: `Calculate ${left.pretty()} ${name} ${right.pretty()} (yielding ${result.pretty()})`,
+                value: result
+            }
+        } else {
+            throw new Error(`Could not compute ${left} ${name} ${right}`)
+        }
     }
 }

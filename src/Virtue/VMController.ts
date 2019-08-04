@@ -1,10 +1,26 @@
-import { VM, VMCommand, VMResult } from "./VM";
+import { VM, VMCommand, VMResult, describeCommand } from "./VM";
 import Justice from "./Justice";
 import assertUnreachable from "../Utils/assertUnreachable";
 
+type Program = VMCommand[]
 export class VMController {
+    debug: boolean = false
     constructor(private vm: VM = new Justice()) {}
-    execute(command: VMCommand): VMResult {
+
+    execute(program: Program): VMResult | null {
+        let res = null;
+        program.forEach(step => {
+            res = this.executeOne(step)
+            if (this.debug) {
+                console.log(
+                    describeCommand(step).padEnd(28), "---",
+                    res.message)
+            }
+        });
+        return res;
+    }
+
+    private executeOne(command: VMCommand): VMResult {
         let res: VMResult | null = null;
         switch(command.kind) { 
             case 'write': 
@@ -18,6 +34,9 @@ export class VMController {
                 break;
             case 'add':
                 res = this.vm.add(command);
+                break;
+            case 'subtract':
+                res = this.vm.subtract(command);
                 break;
             case 'multiply':
                 res = this.vm.multiply(command);

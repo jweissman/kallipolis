@@ -1,8 +1,6 @@
 import { ActionDict, Node } from "ohm-js";
 
-export abstract class KalExpression {
-    // abstract value: any;
-}
+export abstract class KalExpression {}
 
 export class Identifier extends KalExpression {
     constructor(public value: string) {
@@ -12,6 +10,12 @@ export class Identifier extends KalExpression {
 
 export class NumberLiteral extends KalExpression {
     constructor(public value: number) {
+        super();
+    }
+}
+
+export class StringLiteral extends KalExpression {
+    constructor(public value: string) {
         super();
     }
 }
@@ -41,7 +45,7 @@ export class JudgmentExpr extends KalExpression {
     }
 }
 
-type BinaryOp = '+' | '*' | '/'
+type BinaryOp = '+' | '-' | '*' | '/'
 export class BinaryExpr extends KalExpression {
     constructor(
         public left: KalExpression,
@@ -49,6 +53,14 @@ export class BinaryExpr extends KalExpression {
         public op: BinaryOp
     ) {
         super(); 
+    }
+}
+
+export class ParenExpr extends KalExpression {
+    constructor(
+        public stmt: KalExpression
+    ) {
+        super();
     }
 }
 
@@ -77,11 +89,22 @@ const Tree: ActionDict = {
 
     AddExp_plus: (left: Node, _pl: Node, right: Node) =>
         new BinaryExpr(left.tree, right.tree, '+'),
+    AddExp_minus: (left: Node, _pl: Node, right: Node) =>
+        new BinaryExpr(left.tree, right.tree, '-'),
 
     MulExp_times: (left: Node, _pl: Node, right: Node) =>
         new BinaryExpr(left.tree, right.tree, '*'),
     MulExp_divide: (left: Node, _pl: Node, right: Node) =>
         new BinaryExpr(left.tree, right.tree, '/'),
+
+    PriExp_paren: (_lp: Node, contents: Node, _rp: Node) =>
+        new ParenExpr(contents.tree),
+
+    StringLiteral: (string: Node) => new StringLiteral(
+        String(string.tree)
+    ),
+
+    string: (_lq: Node, s: Node, _rq: Node) => s.sourceString,
 
     NumberLiteral: (number: Node) => new NumberLiteral(
         Number(number.sourceString)

@@ -1,11 +1,12 @@
 import grammar from './Grammar';
 import semantics from './Semantics';
 import { SimpleInterpreter } from '../Virtue/Interpreter';
-import { VMCommand, VMInt, Push, Write, Read } from '../Virtue/VM';
+import { VMCommand, Push, Write, Read } from '../Virtue/VM';
 import { Node } from 'ohm-js';
-import { NumberLiteral, BinaryExpr, KalExpression, ProgramExpr, AssignmentExpr, Identifier, JudgmentExpr } from './SemanticAttributes/AbstractSyntaxTree';
+import { NumberLiteral, BinaryExpr, KalExpression, ProgramExpr, AssignmentExpr, Identifier, JudgmentExpr, StringLiteral, ParenExpr } from './SemanticAttributes/AbstractSyntaxTree';
 import VMController from '../Virtue/VMController';
 import assertUnreachable from '../Utils/assertUnreachable';
+import { VMInt, VMStr } from '../Virtue/VMValue';
 
 class KalInterpreter extends SimpleInterpreter {
     vm = new VMController()
@@ -27,6 +28,12 @@ class KalInterpreter extends SimpleInterpreter {
                 value: new VMInt(e.value)
             }
             cmds.push(push)
+        } else if (e instanceof StringLiteral) {
+            let push: Push = {
+                kind: 'push',
+                value: new VMStr(e.value)
+            }
+            cmds.push(push)
         } else if (e instanceof AssignmentExpr) {
             cmds = this.assign(e)
         } else if (e instanceof Identifier) {
@@ -35,9 +42,9 @@ class KalInterpreter extends SimpleInterpreter {
                 key: e.value
             }
             cmds.push(read)
-        }
-
-        else {
+        } else if (e instanceof ParenExpr) {
+            this.exprToCommands(e.stmt).forEach(c => cmds.push(c))
+        } else {
             console.warn("COULD NOT COMPILE", { e })
             throw new Error("Could not compile expression: " + JSON.stringify(e))
         }
@@ -54,11 +61,12 @@ class KalInterpreter extends SimpleInterpreter {
 
     private binaryOp(be: BinaryExpr): VMCommand[] {
         let cmds: VMCommand[] = [
-            ...this.exprToCommands(be.left),
             ...this.exprToCommands(be.right),
+            ...this.exprToCommands(be.left),
         ]
         switch (be.op) {
             case '+': cmds.push({ kind: 'add' }); break;
+            case '-': cmds.push({ kind: 'subtract' }); break;
             case '*': cmds.push({ kind: 'multiply' }); break;
             case '/': cmds.push({ kind: 'divide' }); break;
             default: assertUnreachable(be.op);
