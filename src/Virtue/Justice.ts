@@ -9,55 +9,66 @@ import {
     Divide,
     Subtract,
 } from "./VM";
-import { VMValue, VMInt, VMType, TypedVMValue, IntegerVMType } from "./VMValue";
+import { VMValue, VMType, SimpleVMType, IntegerVMType, StringVMType, typeFromValue, Type, AnyVMType, } from "./VMValue";
+import { BinaryOp } from "../Kallipolis/SemanticAttributes/AbstractSyntaxTree";
 
-class VMError extends VMValue {
-    constructor(private message: string) {
-        super();
-    }
-    pretty(): string {
-        return this.message;
-    }
-    toJS() {
-        throw new Error(this.message);
-    }
-    plus(right: VMInt) { return this; }
-    minus(right: VMInt) { return this; }
-    times(right: VMInt) { return this; }
-    divide(right: VMInt) { return this; }
-}
-// the Justice VM engine :D
 export default class Justice extends VM {
-    types: { [key: string]: VMType } = {}
-    db: { [key: string]: TypedVMValue } = {}
+    typeDefs: { [key: string]: VMType } = {
+        Int: new IntegerVMType(),
+        String: new StringVMType(),
+    }
+    typeDb: { [key: string]: Type<VMValue> } = {}
+    db: { [key: string]: VMValue } = {}
     stack: VMValue[] = []
     get top() { return this.stack[this.stack.length-1]; }
 
+    debug() { 
+        return ["~~~ JUSTICE VM ~~~"].join("\n")
+    }
+
+    dereferenceTypeName(name: string) {
+        let baseTypes: { [key: string]: VMType }  = { 
+            VMInt: new IntegerVMType(),
+            VMStr: new StringVMType(),
+            VMDynamic: new AnyVMType(),
+        }
+        return baseTypes[name];
+    }
+
+    findVariableTypeByName(name: string): Type<VMValue> {
+        let t = this.typeDb[name];
+        return t;
+    }
+
+    findTypeByName(typeName: string) {
+        return this.typeDefs[typeName];
+    }
+
+    suggestVariableType(name: string, value: Type<VMValue>): void {
+        this.typeDb[name] = value;
+    }
+
     multiply(_m: Multiply): VMResult { 
-        return this.binaryOp('times', (left: VMValue, right: VMValue) => left.times
-            ? left.times(right)
-            : new VMError(`${left.pretty()} cannot be multiplied`)
+        return this.binaryOp('times', '*', (left: VMValue, right: VMValue) =>
+            left.times(right)
         )
     }
 
     divide(_d: Divide): VMResult { 
-        return this.binaryOp('over', (left: VMValue, right: VMValue) => left.divide
-            ? left.divide(right)
-            : new VMError(`${left.pretty()} cannot be divided`)
+        return this.binaryOp('over', '/', (left: VMValue, right: VMValue) =>
+            left.divide(right)
         )
     }
 
     add(_a: Add): VMResult { 
-        return this.binaryOp('plus', (left: VMValue, right: VMValue) => left.plus
-            ? left.plus(right)
-            : new VMError(`${left.pretty()} cannot be added`)
+        return this.binaryOp('plus', '+', (left: VMValue, right: VMValue) =>
+            left.plus(right)
         )
     }
 
     subtract(_s: Subtract): VMResult { 
-        return this.binaryOp('minus', (left: VMValue, right: VMValue) => left.minus
-            ? left.minus(right)
-            : new VMError(`${left.pretty()} cannot be added`)
+        return this.binaryOp('minus', '-', (left: VMValue, right: VMValue) =>
+            left.minus(right)
         )
     }
 
@@ -74,30 +85,36 @@ export default class Justice extends VM {
         let message = '';
         let { key } = w;
         let v = this.top;
-        let { type } = w;
-        if (type) {
-            if (type instanceof IntegerVMType) {
-                if (!(v instanceof VMInt)) {
-                    throw new Error(`${v} is not an integer!`)
-                }
+        let { type: t } = w;
+        if (t) {
+            if (t instanceof SimpleVMType) {
+                let typeName = t.getName();
+                let resolved = this.findTypeByName(typeName)
+                this.suggestVariableType(key, resolved.type)
             }
         }
-        this.db[key] = { type, value: v };
+        this.db[key] = v
         message = `Assigned ${v.pretty()} to ${key}`
         return { message, value: v };
     }
 
     read(r: Read): VMResult {
-        let value = this.db[r.key].value
+        let value = this.db[r.key]
         this.stack.push(value);
-        return { message: `Read ${value.pretty()} from ${r.key}`, value }
+        return { message: `Read from ${r.key}`, value }
     }
 
-    private binaryOp(name: string, method: (l: VMValue, r: VMValue) => VMValue): VMResult {
+    private binaryOp(name: string, opName: BinaryOp, method: (l: VMValue, r: VMValue) => VMValue): VMResult {
         let left = this.stack.pop();
         let right = this.stack.pop();
         let result;
         if (left && right) {
+            let leftType = typeFromValue(left, this.typeDefs)
+            let rightType = typeFromValue(right, this.typeDefs)
+            let validOp = leftType.checkBinaryOp(opName, rightType.type)
+            if (!validOp) {
+                throw new Error(`Type error: binary op ${opName} not supported for lhs type ${leftType.type.name} and rhs type ${rightType.type.name}`)
+            }
             result = method(left, right);
             this.stack.push(result);
             return {

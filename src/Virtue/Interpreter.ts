@@ -2,19 +2,22 @@ import { Grammar, Semantics, Dict } from 'ohm-js';
 import { VMCommand } from './VM';
 import VMController from './VMController';
 
-
 type Program = VMCommand[];
 
 abstract class Interpreter {
-    abstract vm: VMController;
+    abstract ctrl: VMController;
     abstract parse(input: string): Dict | undefined;
+    abstract analyze(expr: Dict): void;
     abstract compile(expr: Dict): Program;
+
     evaluate(input: string): any {
         let parsed = this.parse(input)
         if (parsed) {
             let source: Dict = parsed;
+            this.analyze(source.tree)
+            
             let cmds: Program = this.compile(source)
-            let res = this.vm.execute(cmds);
+            let res = this.ctrl.execute(cmds);
             if (res && res.value) { return res.value.toJS() }
         } else {
             console.debug("Parse failed.");
@@ -41,6 +44,7 @@ export abstract class SimpleInterpreter extends Interpreter {
             console.warn("Match failed (maybe due to missing semantics?): " + e.message)
         }
     }
+
 }
 
 export default Interpreter;

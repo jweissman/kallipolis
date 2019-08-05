@@ -1,10 +1,20 @@
 import { ActionDict, Node } from "ohm-js";
+import { VMType, Type, VMValue, VMInt, VMStr, BinaryOpMetadata, SimpleVMType } from "../../Virtue/VMValue";
+import { VM } from "../../Virtue/VM";
 
-export abstract class KalExpression {}
+type Context = VM;
+
+export abstract class KalExpression {
+    abstract type(ctx: Context): Type<VMValue>
+}
 
 export class Identifier extends KalExpression {
     constructor(public value: string) {
         super();
+    }
+
+    type(ctx: Context): Type<VMValue> {
+        return ctx.findVariableTypeByName(this.value)
     }
 }
 
@@ -12,24 +22,63 @@ export class NumberLiteral extends KalExpression {
     constructor(public value: number) {
         super();
     }
+
+    type(ctx: Context): Type<VMValue> {
+        return VMInt
+    }
 }
 
 export class StringLiteral extends KalExpression {
     constructor(public value: string) {
         super();
     }
+
+    type(ctx: Context): Type<VMValue> {
+        return VMStr
+    }
 }
 
 export class AssignmentExpr extends KalExpression {
     constructor(
-        public name: Identifier,
+        public name: KalExpression,
         public value: KalExpression
     ) {
         super();
     }
+
+    derefName(e: KalExpression): string { 
+        if (e instanceof Identifier) {
+            return e.value;
+        } else if (e instanceof JudgmentExpr) {
+            return this.derefName(e.value)
+        } else {
+            console.log("deref failed!", { e })
+            throw new Error("Cannot deref name of assignment lhs")
+        }
+    }
+
+    type(ctx: Context): Type<VMValue> { 
+        let t = this.value.type(ctx)
+        let name: string = this.derefName(this.name)
+        if (this.name instanceof JudgmentExpr) {
+            let j: JudgmentExpr = this.name;
+            let judgment = j.judgedType;
+            if (judgment instanceof SimpleTypeExpr) {
+                let intendedType = ctx.findTypeByName(judgment.value)
+                let matched: boolean = t === intendedType.type
+                if (!matched) {
+                    throw new Error(`Judgment did not match on assignment; expected ${judgment.value} but got ${t.name} `)
+                }
+            } else {
+                throw new Error("Don't know how to render judgment " + judgment);
+            }
+        }
+        ctx.suggestVariableType(name, t)
+        return t
+    }
 }
 
-export abstract class TypeExpr extends KalExpression {}
+export abstract class TypeExpr extends KalExpression { }
 
 export class SimpleTypeExpr extends TypeExpr {
     constructor(
@@ -37,15 +86,23 @@ export class SimpleTypeExpr extends TypeExpr {
     ) {
         super();
     }
-}
 
-export class JudgmentExpr extends KalExpression {
-    constructor(public value: Identifier, public type: TypeExpr) {
-        super();
+    type(ctx: Context): Type<VMValue> {
+        throw new Error("A type expression has no type (a girl has no name)")
     }
 }
 
-type BinaryOp = '+' | '-' | '*' | '/'
+export class JudgmentExpr extends KalExpression {
+    constructor(public value: Identifier, public judgedType: TypeExpr) {
+        super();
+    }
+
+    type(ctx: Context): Type<VMValue> {
+        return this.judgedType.type(ctx)
+    }
+}
+
+export type BinaryOp = '+' | '-' | '*' | '/'
 export class BinaryExpr extends KalExpression {
     constructor(
         public left: KalExpression,
@@ -53,6 +110,36 @@ export class BinaryExpr extends KalExpression {
         public op: BinaryOp
     ) {
         super(); 
+    }
+
+    private derefType(ctx: Context, maybeId: KalExpression): VMType {
+        let t: Type<VMValue>;
+        if (maybeId instanceof Identifier) {
+            let id: Identifier = maybeId;
+            let { value } = id;
+            t = ctx.findVariableTypeByName(value)
+        } else {
+            t = maybeId.type(ctx)
+        }
+        return ctx.dereferenceTypeName(t.name)
+    }
+    
+    type(ctx: Context): Type<VMValue> {
+        let leftType: VMType = this.derefType(ctx, this.left);
+        let rightType: VMType = this.derefType(ctx, this.right)
+        if (leftType) {
+            let matchingOp: BinaryOpMetadata | undefined = leftType.getBinaryOp(this.op).
+                find((op: BinaryOpMetadata) => op.opType === rightType.type)
+            if (matchingOp) {
+                return matchingOp.resultType;
+            } else {
+                throw new Error("Binary expression has invalid type: " +
+                    leftType.type.name + this.op + rightType.type.name)
+            }
+        } else {
+            console.warn("NO TYPE FOR LEFT FOUND", { left: this.left, right: this.right, leftType, rightType })
+            throw new Error("Couldn't find type for left: " + this.left)
+        }
     }
 }
 
@@ -62,6 +149,10 @@ export class ParenExpr extends KalExpression {
     ) {
         super();
     }
+
+    type(ctx: Context): Type<VMValue> {
+        return this.stmt.type(ctx);
+    }
 }
 
 export class ProgramExpr extends KalExpression {
@@ -69,6 +160,10 @@ export class ProgramExpr extends KalExpression {
         public stmts: KalExpression[]
     ) {
         super();
+    }
+
+    type(ctx: Context): Type<VMValue> {
+        return this.stmts[this.stmts.length-1].type(ctx);
     }
 }
 

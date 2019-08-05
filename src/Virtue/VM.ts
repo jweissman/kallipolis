@@ -1,5 +1,5 @@
 import assertUnreachable from "../Utils/assertUnreachable";
-import { VMType, VMValue } from "./VMValue";
+import { VMType, VMValue, Type } from "./VMValue";
 
 export interface Read {
     kind: 'read',
@@ -9,7 +9,6 @@ export interface Read {
 export interface Write {
     kind: 'write',
     key: string,
-    // value: VMValue,
     type?: VMType
 }
 
@@ -73,4 +72,11 @@ export abstract class VM {
     abstract subtract(command: VMCommand): VMResult;
     abstract multiply(command: VMCommand): VMResult;
     abstract divide(command: Divide): VMResult;
+
+    abstract dereferenceTypeName(name: string): VMType;
+    abstract findTypeByName(value: string): VMType;
+    abstract findVariableTypeByName(value: string): Type<VMValue>;
+    abstract suggestVariableType(value: string, type: Type<VMValue>): void;
+
+    abstract debug(): string;
 }

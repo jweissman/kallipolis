@@ -6,8 +6,11 @@ class VirtueRepl {
     constructor(
         private interpreter: Interpreter,
         private prompt: string,
-        private logo: string
-    ) { }
+        private logo: string,
+        private smallLogo: string,
+    ) {}
+
+    debug() { console.log(this.smallLogo) }
 
     boot() {
         const args = process.argv.slice(2);
@@ -18,11 +21,12 @@ class VirtueRepl {
                 eval: (input: string, _ctx: any, _filename: any, cb: any) => {
                     const out = this.interpreter.evaluate(input);
                     if (out) { cb(null, out) };
-                }
+                },
+                terminal: true,
             })
         } else {
             const contents = fs.readFileSync(args[0]).toString();
-            this.interpreter.evaluate(contents);
+            console.log(this.interpreter.evaluate(contents));
         }
     }
 }

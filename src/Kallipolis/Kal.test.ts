@@ -35,24 +35,18 @@ describe("Kal", () => {
     })
 
     it('stores and retrieves values', () => {
-        expect(kal.evaluate('a=3; a+4')).toEqual(7);
-        expect(kal.evaluate('b=5; a+b')).toEqual(8);
+        expect(kal.evaluate('a=3; a+4; b=5; a+b')).toEqual(8);
     })
 
     it('strings', () => {
         expect(kal.evaluate('greeting="hello"; greeting + " world"')).toEqual("hello world")
     })
 
-    it('evaluates type judgments', () => {
+    it('enforces type judgments', () => {
         expect(kal.evaluate('a: Int = 123')).toEqual(123)
         expect(kal.evaluate('b: Int = 100 + 24')).toEqual(124)
+        expect(()=>kal.evaluate('c: String = 1234')).toThrowError()
+        expect(()=>kal.evaluate('d: Int = "hello"')).toThrowError()
+        expect(()=>kal.evaluate('a + "hello"')).toThrowError()
     })
-
-    //it("evaluates simple expressions", () => {
-    //    expect(kal.evaluate('2+2')).toEqual(4)
-    //    expect(kal.evaluate('"hello world"')).toEqual('hello world')
-    //    expect(kal.evaluate('[1,2,3][0]')).toEqual(1)
-    //    expect(kal.evaluate('{greeting: "hi"}.greeting')).toEqual('hi')
-    //    expect(kal.evaluate('(a,b)=>{}')).toEqual('()=>{}')
-    //})
 })

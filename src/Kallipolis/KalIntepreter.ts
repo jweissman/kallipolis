@@ -3,18 +3,25 @@ import semantics from './Semantics';
 import { SimpleInterpreter } from '../Virtue/Interpreter';
 import { VMCommand, Push, Write, Read } from '../Virtue/VM';
 import { Node } from 'ohm-js';
-import { NumberLiteral, BinaryExpr, KalExpression, ProgramExpr, AssignmentExpr, Identifier, JudgmentExpr, StringLiteral, ParenExpr } from './SemanticAttributes/AbstractSyntaxTree';
+import { NumberLiteral, BinaryExpr, KalExpression, ProgramExpr, AssignmentExpr, Identifier, JudgmentExpr, StringLiteral, ParenExpr, SimpleTypeExpr } from './SemanticAttributes/AbstractSyntaxTree';
 import VMController from '../Virtue/VMController';
 import assertUnreachable from '../Utils/assertUnreachable';
-import { VMInt, VMStr } from '../Virtue/VMValue';
+import { VMInt, VMStr, VMType, SimpleVMType, AnyVMType, Type, VMValue } from '../Virtue/VMValue';
 
 class KalInterpreter extends SimpleInterpreter {
-    vm = new VMController()
+    ctrl = new VMController()
+    vm = this.ctrl.getVM()
     language = { grammar, semantics }
+
+    analyze(e: ProgramExpr) {
+        let program = e.stmts;
+        program.forEach(step => step.type(this.vm))
+    }
 
     compile(node: Node): VMCommand[] {
         return this.exprToCommands(node.tree);
     }
+
 
     private exprToCommands(e: KalExpression): VMCommand[] {
         let cmds: VMCommand[] = []
@@ -74,12 +81,23 @@ class KalInterpreter extends SimpleInterpreter {
         return cmds;
     }
 
+    private deriveVMType(je: JudgmentExpr): VMType {
+        if (je.judgedType instanceof SimpleTypeExpr) {
+            let e: SimpleTypeExpr = je.judgedType;
+            return new SimpleVMType(e.value);
+        } else {
+            throw new Error("Don't know how to type: " + je.judgedType)
+        }
+    }
+
     private assign(a: AssignmentExpr): VMCommand[] {
         let cmds: VMCommand[] = []
         cmds = [...this.exprToCommands(a.value)]
         let key: Identifier;
+        let type: VMType = new AnyVMType();
         if (a.name instanceof JudgmentExpr) {
             key = a.name.value;
+            type = this.deriveVMType(a.name);
         } else if (a.name instanceof Identifier) {
             key = a.name;
         } else {
@@ -91,6 +109,7 @@ class KalInterpreter extends SimpleInterpreter {
         let write: Write = {
             kind: 'write',
             key: key.value,
+            type,
         }
         cmds.push(write)
         return cmds;

@@ -5,16 +5,23 @@ import assertUnreachable from "../Utils/assertUnreachable";
 type Program = VMCommand[]
 export class VMController {
     debug: boolean = false
-    constructor(private vm: VM = new Justice()) {}
+    constructor(private vm: VM = new Justice()) {
+        console.debug("Kallipolis on VirtueVM v0.1")
+    }
 
-    execute(program: Program): VMResult | null {
+    getVM() { return this.vm }
+
+    execute(
+        program: Program,
+    ): VMResult | null {
         let res = null;
         program.forEach(step => {
             res = this.executeOne(step)
             if (this.debug) {
                 console.log(
                     describeCommand(step).padEnd(28), "---",
-                    res.message)
+                    res.message
+                    )
             }
         });
         return res;
