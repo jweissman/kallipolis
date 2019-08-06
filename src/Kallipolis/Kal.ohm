@@ -41,22 +41,21 @@ Kal {
     NumberLiteral = number
 	  Name = ident
 
-    Type =
-             | Type Type+ -- algebraic
-             | Type "|" Type -- sum
-             | Type "&" Type -- union
-             | Type Arrow Type -- fn
-             | Type "[]" -- list
-             | "(" Type ")" -- parens
-             | "(" ListOf<Type, ","> ")" -- tuple
-             | "{" ListOf<KeyVal, ","> "}" -- record
-             | Name -- simple
-    KeyVal = Name ":" Type
+    Type = Type Type+ -- algebraic
+         | Type "|" Type -- sum
+         | Type "&" Type -- union
+         | Type Arrow Type -- fn
+         | Type "[]" -- list
+         | "(" Type ")" -- parens
+         | "(" ListOf<Type, ","> ")" -- tuple
+         | "{" ListOf<KeyVal, ","> "}" -- record
+         | Name -- simple
+
+    KeyVal = Name Colon Type
     Colon = ":"
     Equals = "="
     Arrow = "->"
 
-    
     string = "\"" #(~"\"" any)* "\""
     ident = letter alnum*
     number = digit+

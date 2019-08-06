@@ -1,9 +1,10 @@
-import { VM, VMCommand, VMResult, describeCommand } from "./VM";
+import { VM } from "./VM";
 import Justice from "./Justice";
 import assertUnreachable from "../Utils/assertUnreachable";
+import { VMCommand, VMResult, describeCommand } from "./Command";
 
 type Program = VMCommand[]
-export class VMController {
+export class Controller {
     debug: boolean = false
     constructor(private vm: VM = new Justice()) {
         console.debug("Kallipolis on VirtueVM v0.1")
@@ -65,4 +66,4 @@ export class VMController {
     }
 }
 
-export default VMController;
+export default Controller;

@@ -1,8 +1,10 @@
 import { ActionDict, Node } from "ohm-js";
-import { VMType, Type, VMValue, VMInt, VMStr, BinaryOpMetadata, SimpleVMType } from "../../Virtue/VMValue";
-import { VM } from "../../Virtue/VM";
+import { Type } from "../../Utils/Type";
+import { VMValue, VMInt, VMStr } from "../../Virtue/VMValue";
+import { VMType, BinaryOpMetadata } from "../../Virtue/Types";
+import Justice from "../../Virtue/Justice";
 
-type Context = VM;
+type Context = Justice;
 
 export abstract class KalExpression {
     abstract type(ctx: Context): Type<VMValue>
@@ -133,8 +135,10 @@ export class BinaryExpr extends KalExpression {
             if (matchingOp) {
                 return matchingOp.resultType;
             } else {
-                throw new Error("Binary expression has invalid type: " +
-                    leftType.type.name + this.op + rightType.type.name)
+                throw new Error(
+                    "Binary expression has invalid type: " +
+                    leftType.type.name + this.op + rightType.type.name
+                )
             }
         } else {
             console.warn("NO TYPE FOR LEFT FOUND", { left: this.left, right: this.right, leftType, rightType })

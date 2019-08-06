@@ -1,21 +1,26 @@
 import grammar from './Grammar';
 import semantics from './Semantics';
 import { SimpleInterpreter } from '../Virtue/Interpreter';
-import { VMCommand, Push, Write, Read } from '../Virtue/VM';
 import { Node } from 'ohm-js';
 import { NumberLiteral, BinaryExpr, KalExpression, ProgramExpr, AssignmentExpr, Identifier, JudgmentExpr, StringLiteral, ParenExpr, SimpleTypeExpr } from './SemanticAttributes/AbstractSyntaxTree';
-import VMController from '../Virtue/VMController';
+import Controller from '../Virtue/Controller';
 import assertUnreachable from '../Utils/assertUnreachable';
-import { VMInt, VMStr, VMType, SimpleVMType, AnyVMType, Type, VMValue } from '../Virtue/VMValue';
+import { VMInt, VMStr } from '../Virtue/VMValue';
+import { VMType, SimpleVMType, AnyVMType } from '../Virtue/Types';
+import { VMCommand, Push, Read, Write } from '../Virtue/Command';
+import Justice from '../Virtue/Justice';
 
 class KalInterpreter extends SimpleInterpreter {
-    ctrl = new VMController()
+    ctrl = new Controller()
     vm = this.ctrl.getVM()
     language = { grammar, semantics }
 
     analyze(e: ProgramExpr) {
-        let program = e.stmts;
-        program.forEach(step => step.type(this.vm))
+        if (this.vm instanceof Justice) {
+            let justice: Justice = this.vm;
+            let program = e.stmts;
+            program.forEach(step => step.type(justice))
+        }
     }
 
     compile(node: Node): VMCommand[] {

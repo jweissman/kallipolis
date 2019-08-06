@@ -1,11 +1,11 @@
 import { Grammar, Semantics, Dict } from 'ohm-js';
-import { VMCommand } from './VM';
-import VMController from './VMController';
+import Controller from './Controller';
+import { VMCommand } from './Command';
 
 type Program = VMCommand[];
 
 abstract class Interpreter {
-    abstract ctrl: VMController;
+    abstract ctrl: Controller;
     abstract parse(input: string): Dict | undefined;
     abstract analyze(expr: Dict): void;
     abstract compile(expr: Dict): Program;
@@ -41,7 +41,7 @@ export abstract class SimpleInterpreter extends Interpreter {
                 console.warn(match.shortMessage);
             }
         } catch (e) {
-            console.warn("Match failed (maybe due to missing semantics?): " + e.message)
+            console.warn("Lex error: " + e.message)
         }
     }
 

@@ -1,16 +1,9 @@
-import {
-    VM,
-    Multiply,
-    VMResult,
-    Add,
-    Push,
-    Write,
-    Read,
-    Divide,
-    Subtract,
-} from "./VM";
-import { VMValue, VMType, SimpleVMType, IntegerVMType, StringVMType, typeFromValue, Type, AnyVMType, } from "./VMValue";
+import { VM } from "./VM";
+import { VMValue  } from "./VMValue";
 import { BinaryOp } from "../Kallipolis/SemanticAttributes/AbstractSyntaxTree";
+import { VMType, IntegerVMType, StringVMType, AnyVMType, SimpleVMType, typeFromValue } from "./Types";
+import { Type } from "../Utils/Type";
+import { Multiply, VMResult, Divide, Add, Subtract, Push, Write, Read } from "./Command";
 
 export default class Justice extends VM {
     typeDefs: { [key: string]: VMType } = {

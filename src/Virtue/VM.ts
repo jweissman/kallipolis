@@ -1,70 +1,10 @@
-import assertUnreachable from "../Utils/assertUnreachable";
-import { VMType, VMValue, Type } from "./VMValue";
-
-export interface Read {
-    kind: 'read',
-    key: string
-}
-
-export interface Write {
-    kind: 'write',
-    key: string,
-    type?: VMType
-}
-
-export interface Push {
-    kind: 'push',
-    value: VMValue,
-    type?: VMType
-}
-
-export interface Add {
-    kind: 'add',
-    type?: VMType
-}
-
-export interface Subtract {
-    kind: 'subtract',
-    type?: VMType
-}
-
-export interface Multiply {
-    kind: 'multiply',
-    type?: VMType
-}
-
-export interface Divide {
-    kind: 'divide',
-    type?: VMType
-}
-
-export interface VMResult {
-    message: string
-    value: VMValue
-}
-
-export type VMCommand = Read
-                      | Write
-                      | Push
-                      | Add
-                      | Subtract
-                      | Multiply
-                      | Divide
-
-export const describeCommand: (cmd: VMCommand) => string = (cmd) => {
-    switch (cmd.kind) {
-        case 'read':     return `READ FROM ${cmd.key} ONTO _TOP_`;
-        case 'write':    return `WRITE _TOP_ TO ${cmd.key}`;
-        case 'push':     return `PUSH  ${cmd.value.pretty()}`;
-        case 'add':      return `ADD`;
-        case 'subtract': return `SUBTRACT`;
-        case 'multiply': return `MULTIPLY`;
-        case 'divide':   return `DIVIDE`;
-    }
-    return assertUnreachable(cmd);
-}
+import { VMCommand, VMResult, Divide } from "./Command";
+import { VMType } from "./Types";
+import { Type } from "../Utils/Type";
+import { VMValue } from "./VMValue";
 
 export abstract class VM {
+    [x: string]: any;
     abstract read(command: VMCommand): VMResult;
     abstract write(command: VMCommand): VMResult;
     abstract push(command: VMCommand): VMResult;
@@ -73,10 +13,10 @@ export abstract class VM {
     abstract multiply(command: VMCommand): VMResult;
     abstract divide(command: Divide): VMResult;
 
-    abstract dereferenceTypeName(name: string): VMType;
-    abstract findTypeByName(value: string): VMType;
-    abstract findVariableTypeByName(value: string): Type<VMValue>;
-    abstract suggestVariableType(value: string, type: Type<VMValue>): void;
+    // abstract dereferenceTypeName(name: string): VMType;
+    // abstract findTypeByName(value: string): VMType;
+    // abstract findVariableTypeByName(value: string): Type<VMValue>;
+    // abstract suggestVariableType(value: string, type: Type<VMValue>): void;
 
     abstract debug(): string;
 }
