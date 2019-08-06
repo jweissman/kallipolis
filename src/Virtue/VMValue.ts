@@ -36,16 +36,18 @@ export class VMInt extends VMValue {
     }
     getValue() { return this.value; }
     toJS() { return Number(this.value); }
-    plus(right: VMInt) {
-        if (!(right instanceof VMInt)) {
-            throw new Error("Can only add ints to ints")
+    plus(right: VMInt | VMStr): VMInt | VMStr {
+        if (right instanceof VMInt) {
+            return new VMInt(this.getValue() + right.getValue());
+        } else if (right instanceof VMStr) {
+            return new VMStr(String(this.getValue()) + right.getContents());
+        } else {
+            throw new Error("Can only add strs or ints to ints")
         }
-        return new VMInt(this.getValue() + right.getValue());
     }
     minus(right: VMInt) {
         if (!(right instanceof VMInt)) {
             throw new Error("Can only subtract ints from ints")
-
         }
         return new VMInt(this.getValue() - right.getValue());
     }

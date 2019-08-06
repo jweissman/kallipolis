@@ -4,6 +4,14 @@ import { VMValue, VMInt, VMStr } from "../../Virtue/VMValue";
 import { VMType, BinaryOpMetadata } from "../../Virtue/Types";
 import Justice from "../../Virtue/Justice";
 
+export class KalTypeError extends Error {
+    constructor(m: string) {
+        super(m);
+        Object.setPrototypeOf(this, KalTypeError.prototype);
+    }
+}
+
+
 type Context = Justice;
 
 export abstract class KalExpression {
@@ -69,7 +77,9 @@ export class AssignmentExpr extends KalExpression {
                 let intendedType = ctx.findTypeByName(judgment.value)
                 let matched: boolean = t === intendedType.type
                 if (!matched) {
-                    throw new Error(`Judgment did not match on assignment; expected ${judgment.value} but got ${t.name} `)
+                    throw new KalTypeError(
+                        `Expected ${judgment.value} but got ${t.name}`
+                    )
                 }
             } else {
                 throw new Error("Don't know how to render judgment " + judgment);
@@ -80,7 +90,7 @@ export class AssignmentExpr extends KalExpression {
     }
 }
 
-export abstract class TypeExpr extends KalExpression { }
+export abstract class TypeExpr extends KalExpression {}
 
 export class SimpleTypeExpr extends TypeExpr {
     constructor(
@@ -91,6 +101,12 @@ export class SimpleTypeExpr extends TypeExpr {
 
     type(ctx: Context): Type<VMValue> {
         throw new Error("A type expression has no type (a girl has no name)")
+    }
+}
+
+export abstract class TypedefExpr extends KalExpression {
+    constructor(public name: KalExpression, public typedef: KalExpression) {
+        super();
     }
 }
 
@@ -111,7 +127,7 @@ export class BinaryExpr extends KalExpression {
         public right: KalExpression,
         public op: BinaryOp
     ) {
-        super(); 
+        super();
     }
 
     private derefType(ctx: Context, maybeId: KalExpression): VMType {

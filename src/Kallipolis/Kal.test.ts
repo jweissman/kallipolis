@@ -1,4 +1,5 @@
 import KalInterpreter from "./KalIntepreter";
+import { KalTypeError } from "./SemanticAttributes/AbstractSyntaxTree";
 
 describe("Kal", () => {
     let kal = new KalInterpreter()
@@ -39,14 +40,32 @@ describe("Kal", () => {
     })
 
     it('strings', () => {
+        expect(kal.evaluate('"hi"')).toEqual("hi")
         expect(kal.evaluate('greeting="hello"; greeting + " world"')).toEqual("hello world")
     })
+    
+    it.skip('typedefs', () => {
+        // alias
+        expect(kal.evaluate('type Name = String')).toEqual('Name')
+        expect(kal.evaluate('name: Name = "Sam"')).toEqual('Sam')
 
-    it('enforces type judgments', () => {
-        expect(kal.evaluate('a: Int = 123')).toEqual(123)
-        expect(kal.evaluate('b: Int = 100 + 24')).toEqual(124)
-        expect(()=>kal.evaluate('c: String = 1234')).toThrowError()
-        expect(()=>kal.evaluate('d: Int = "hello"')).toThrowError()
-        expect(()=>kal.evaluate('a + "hello"')).toThrowError()
+        // tuple
+        // function
+        // higher-order? (with params?)
+        // list
+    })
+
+    describe('enforces type judgments', () => {
+        it('checks for Ints on an assignment', () => {
+            expect(kal.evaluate('a: Int = 123')).toEqual(123)
+            expect(kal.evaluate('b: Int = 100 + 24')).toEqual(124)
+            expect(() => kal.evaluate('c: Int = "hello"')).toThrowError(KalTypeError)
+            expect(() => kal.evaluate('a + "hello"')).not.toThrowError(KalTypeError)
+        })
+
+        it('checks for Strings on an assignment', () => {
+            expect(kal.evaluate('a: String = "hello"')).toEqual("hello")
+            expect(() => kal.evaluate('b: String = 1234')).toThrowError(KalTypeError)
+        })
     })
 })

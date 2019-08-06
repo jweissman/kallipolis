@@ -22,7 +22,7 @@ export class Controller {
                 console.log(
                     describeCommand(step).padEnd(28), "---",
                     res.message
-                    )
+                )
             }
         });
         return res;
